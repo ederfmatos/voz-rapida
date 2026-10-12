@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "voz-rapida"
+version = "0.1.0"
+description = "Ditado local em tempo real: atalho ou clique, fala, e o texto vai para a área de transferência."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [{ name = "Eder Matos" }]
+dependencies = [
+  "numpy",
+  "onnx-asr[cpu,hub]>=0.10",
+  "rumps>=0.4; sys_platform == 'darwin'",
+  "sounddevice>=0.4.6; sys_platform == 'darwin'",
+  "pyobjc-framework-Quartz>=10; sys_platform == 'darwin'",
+]
+
+[project.scripts]
+voz-rapida = "voz_rapida.__main__:main"
+
+[tool.setuptools]
+packages = ["voz_rapida"]
