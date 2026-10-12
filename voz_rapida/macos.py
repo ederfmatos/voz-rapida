@@ -151,7 +151,8 @@ class VozRapida(rumps.App):
             live = (s.text() + " " + s.partial).strip()
             tail = ("…" + live[-28:]) if len(live) > 28 else live
             self.title = f"🔴 {secs // 60}:{secs % 60:02d} {tail}".rstrip()
-            self.live_item.title = live[-80:] or "Fale…"
+            self.live_item.title = ("⚠ Microfone saturado — reduza o volume de entrada"
+                                    if s.segmenter.saturated else live[-80:] or "Fale…")
         elif s:
             self.title = "⏳"
         elif time.monotonic() < self.flash_until:

@@ -60,9 +60,18 @@ class Segmenter:
         self.speech = 0
         self.silence = 0
         self.seg_id = 0
+        self.clipped = collections.deque(maxlen=10)   # último 1 s
+        self.peak_rms = 0.0
+
+    @property
+    def saturated(self):
+        """Microfone estourado: mais de 5% das amostras no limite."""
+        return len(self.clipped) >= 5 and float(np.mean(self.clipped)) > 0.05
 
     def feed(self, x):
         rms = float(np.sqrt(np.mean(x * x)) + 1e-9)
+        self.clipped.append(float(np.mean(np.abs(x) > 0.99)))
+        self.peak_rms = max(self.peak_rms, rms)
         if self.floor is None:
             self.floor = rms
         elif rms < self.floor:
@@ -300,6 +309,10 @@ class Session:
             if item is STOP:
                 self.partial = ""
                 self.done = True
+                sg = self.segmenter
+                print(f"sessão: {self.elapsed()}s, {sg.seg_id} trechos, ruído {sg.floor or 0:.4f}, "
+                      f"pico {sg.peak_rms:.4f}, saturado={sg.saturated}, texto={len(self.text())} chars",
+                      file=sys.stderr, flush=True)
                 self.on_done(self.text())
                 return
             self.committed.append(self.engine.recognize(item))

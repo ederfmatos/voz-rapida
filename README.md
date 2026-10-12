@@ -125,6 +125,7 @@ O histórico fica em:
 |---|---|
 | Ícone não aparece (GNOME) | Instale ou ative a extensão *AppIndicator and KStatusNotifierItem Support* |
 | "Nada reconhecido" | Confira o microfone padrão nas configurações de som. No macOS, a permissão de Microfone |
+| "⚠ microfone saturado" | O ganho de entrada está alto demais e o áudio vira ruído. Isso acontece muito depois de videochamadas no navegador, que aumentam o ganho sozinhas. Baixe o volume de entrada para cerca de 40–60%. No Linux: `wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 0.5`. Se houver *Mic Boost* no `alsamixer`, zere-o |
 | Atalho não funciona (macOS) | Permissão de *Monitoramento de Entrada* + reiniciar o app |
 | Logs | Linux: `~/.local/share/voz-rapida/voz-rapida.log` · macOS: `~/Library/Application Support/VozRapida/voz-rapida.log` |
 

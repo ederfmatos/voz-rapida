@@ -222,7 +222,9 @@ class App(Gtk.Application):
     def _rec_status(self, s):
         secs = s.elapsed()
         status = f"Gravando {secs // 60}:{secs % 60:02d}"
-        if not self.engine.ready.is_set():
+        if s.segmenter.saturated:
+            status += "  ⚠ microfone saturado — reduza o volume de entrada"
+        elif not self.engine.ready.is_set():
             status += " (carregando modelo…)"
         return status
 
