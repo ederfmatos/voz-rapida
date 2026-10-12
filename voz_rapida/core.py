@@ -43,6 +43,20 @@ def history_path():
     return os.path.join(data_dir(), "historico.txt")
 
 
+def last_recording_path():
+    return os.path.join(data_dir(), "ultima-gravacao.wav")
+
+
+def save_wav(path, chunks):
+    import wave
+    audio = np.concatenate(chunks) if chunks else np.zeros(0, np.float32)
+    with wave.open(path, "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(RATE)
+        w.writeframes((np.clip(audio, -1, 1) * 32767).astype("<i2").tobytes())
+
+
 def save_history(text):
     with open(history_path(), "a", encoding="utf-8") as f:
         f.write(time.strftime("[%Y-%m-%d %H:%M] ") + text + "\n")
@@ -267,8 +281,14 @@ class Session:
         self.started = time.monotonic()
         self.recording = True
         self.done = False
-        self.recorder = Recorder(self.segmenter.feed, self._audio_end)
+        self.audio = []                   # gravação inteira, salva ao final
+        self.segments = []                # (duração em s, texto) de cada trecho
+        self.recorder = Recorder(self._feed, self._audio_end)
         threading.Thread(target=self._work, daemon=True).start()
+
+    def _feed(self, x):
+        self.audio.append(x)
+        self.segmenter.feed(x)
 
     def _audio_end(self):
         self.segmenter.flush()
@@ -309,13 +329,21 @@ class Session:
             if item is STOP:
                 self.partial = ""
                 self.done = True
+                try:
+                    save_wav(last_recording_path(), self.audio)
+                except OSError as e:
+                    print("não salvou a gravação:", e, file=sys.stderr)
+                for i, (secs, text) in enumerate(self.segments, 1):
+                    print(f"  trecho {i}: {secs:.1f}s -> {text!r}", file=sys.stderr)
                 sg = self.segmenter
                 print(f"sessão: {self.elapsed()}s, {sg.seg_id} trechos, ruído {sg.floor or 0:.4f}, "
                       f"pico {sg.peak_rms:.4f}, saturado={sg.saturated}, texto={len(self.text())} chars",
                       file=sys.stderr, flush=True)
                 self.on_done(self.text())
                 return
-            self.committed.append(self.engine.recognize(item))
+            text = self.engine.recognize(item)
+            self.segments.append((len(item) / RATE, text))
+            self.committed.append(text)
             self.partial = ""
             last_partial_len = 0
             self.on_update(self.text(), "")
